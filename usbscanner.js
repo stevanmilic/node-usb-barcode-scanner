@@ -1,5 +1,5 @@
 var HID = require("node-hid");
-const EventEmitter = require("events");
+var EventEmitter = require("events");
 var util = require("util");
 
 /*
@@ -21,7 +21,7 @@ function getDevices() {
   return HID.devices();
 }
 
-usbScanner.prototype.init = function(options) {
+usbScanner.prototype.init = function (options) {
   var vendorId = options.vendorId || 1534;
   var devicePath = options.devicePath || null;
 
@@ -73,40 +73,42 @@ usbScanner.prototype.init = function(options) {
     87: "+"
   };
 
-  var scanner = devicePath
-    ? { path: devicePath }
-    : getDevices().find(device => device.vendorId === vendorId);
+  var scanner = devicePath ? { path: devicePath } : getDevices().find(function (device) {
+    return device.vendorId === vendorId;
+  });
 
   this.device = new HID.HID(scanner.path);
   // start waiting for scan events
   this.startScanning();
 };
 
-usbScanner.prototype.startScanning = function() {
+usbScanner.prototype.startScanning = function () {
+  var _this = this;
+
   //empty array for barcode bytes
   var bcodeBuff = [];
   //string variable to hold barcode string
   var aBarcode = "";
   //event emitter for when newCode is read from scanner
 
-  this.device.on("data", chunk => {
+  this.device.on("data", function (chunk) {
     //second byte of buffer is all that contains data
-    if (this.hidMap[chunk[2]]) {
+    if (_this.hidMap[chunk[2]]) {
       //if not bcodeBuff escape char (40)
       if (chunk[2] !== 40) {
-        bcodeBuff.push(this.hidMap[chunk[2]]);
+        bcodeBuff.push(_this.hidMap[chunk[2]]);
       } else {
         //revieved escape code, join bCodebuff array and
         aBarcode = bcodeBuff.join("");
         bcodeBuff = [];
         //emit newCode event
-        this.emit("data", aBarcode);
+        _this.emit("data", aBarcode);
       }
     }
   });
 };
 
-usbScanner.prototype.stopScanning = function() {
+usbScanner.prototype.stopScanning = function () {
   this.device.close();
 };
 
